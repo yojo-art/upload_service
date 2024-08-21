@@ -1,0 +1,18 @@
+version: "3"
+services:
+  valkey:
+    image: valkey/valkey:alpine
+    restart: always
+    volumes:
+      - ./valkey:/data
+    networks:
+      - external_network
+    ports:
+      - "19529:6379"
+    healthcheck:
+      test: "valkey-cli ping"
+      interval: 5s
+      retries: 20
+networks:
+  external_network:
+
