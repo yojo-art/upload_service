@@ -134,7 +134,7 @@ fn main() {
 			prefix:"prefix".to_owned(),
 			thumbnail_filter:FilterType::Lanczos3,
 			thumbnail_quality:50f32,
-			max_size:2*1024*1024,
+			max_size:20*1024*1024,
 			allow_origin: "http://localhost:3000".to_owned(),
 			ffmpeg:Some("ffmpeg".to_owned()),
 			ffmpeg_base_url:Some("https://files.example.com/".to_owned()),
