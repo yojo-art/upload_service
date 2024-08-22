@@ -96,7 +96,6 @@ pub async fn post(
 		skip_sensitive_detection:backend_res.skip_sensitive_detection,
 	};
 	let session=serde_json::to_string(&session).unwrap();
-	let time_out=30;//暫定セッション更新期限30秒
 	let sid={
 		use sha2::{Sha256, Digest};
 		let mut hasher = Sha256::new();
@@ -107,7 +106,7 @@ pub async fn post(
 	};
 	let mut header=axum::http::header::HeaderMap::new();
 	ctx.config.set_cors_header(&mut header);
-	if ctx.redis.set_ex::<&String,String,()>(&sid,session,time_out).await.is_ok(){
+	if ctx.redis.set_ex::<&String,String,()>(&sid,session,ctx.config.redis.session_ttl).await.is_ok(){
 		(StatusCode::OK,header,serde_json::to_string(&res).unwrap()).into_response()
 	}else{
 		res.allow_upload=false;

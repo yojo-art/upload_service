@@ -55,6 +55,9 @@ pub async fn post(
 		loop{
 			match ctx.redis.get_del::<&String,String>(&etag).await{
 				Ok(etag)=>{
+					if etag.is_empty(){
+						return err_handle(&ctx,&session).await;
+					}
 					tag=etag;
 					break;
 				},

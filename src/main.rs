@@ -54,6 +54,7 @@ pub struct S3Config{
 }
 #[derive(Clone,Debug,Serialize,Deserialize)]
 pub struct RedisConfig{
+	session_ttl: u64,
 	endpoint: String,
 }
 #[derive(Clone,Debug)]
@@ -150,6 +151,7 @@ fn main() {
 				path_style: true,
 			},
 			redis:RedisConfig{
+				session_ttl: 300,
 				endpoint: "localhost:6379".to_owned(),
 			},
 			backend:Backend{

@@ -131,11 +131,7 @@ pub async fn post(
 	session.content_length+=buf.len() as u64;
 	let temp_id=format!("s3_wait_etag:{}",uuid::Uuid::new_v4().to_string());
 	session.part_etag.push(temp_id.clone());
-	//アップロードに失敗した時は状態を更新しない
-	//let mut file = tokio::io::BufWriter::new(tokio::fs::File::create(format!("test{}.bin",parms.partnumber)).await.unwrap());
-	//tokio::io::copy(&mut body_reader, &mut file).await.unwrap();
-	let time_out=30;//暫定セッション更新期限30秒
-	match ctx.redis.set_ex::<&String,String,()>(&hashed_sid,serde_json::to_string(&session).unwrap(),time_out).await{
+	match ctx.redis.set_ex::<&String,String,()>(&hashed_sid,serde_json::to_string(&session).unwrap(),ctx.config.redis.session_ttl).await{
 		Ok(_)=>{},
 		_=>return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
 	}
