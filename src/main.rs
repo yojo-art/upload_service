@@ -26,8 +26,9 @@ pub struct ConfigFile{
 	ffmpeg_base_url:Option<String>,
 	s3: S3Config,
 	redis:RedisConfig,
-	max_size:u64,
+	part_max_size:u64,
 	backend:Backend,
+	full_upload_limit: u32,
 }
 impl ConfigFile{
 	pub fn set_cors_header(&self,header:&mut axum::http::header::HeaderMap){
@@ -134,10 +135,11 @@ fn main() {
 			prefix:"prefix".to_owned(),
 			thumbnail_filter:FilterType::Lanczos3,
 			thumbnail_quality:50f32,
-			max_size:20*1024*1024,
+			part_max_size:20*1024*1024,
 			allow_origin: "http://localhost:3000".to_owned(),
 			ffmpeg:Some("ffmpeg".to_owned()),
 			ffmpeg_base_url:Some("https://files.example.com/".to_owned()),
+			full_upload_limit:10*1024*1024,
 			s3:S3Config{
 				endpoint: "localhost:9000".to_owned(),
 				region: "us-east-1".to_owned(),
@@ -174,7 +176,6 @@ fn main() {
 	}else{
 		bucket
 	};
-	let full_upload_limit=10*1024*1024;
 	let redis=redis::Client::open(config.redis.endpoint.as_str()).unwrap();
 	let rt=tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
 	rt.block_on(async{
@@ -211,7 +212,8 @@ fn main() {
 		let arg_tup0=arg_tup.clone();
 		let allow_origin0=arg_tup.config.clone();
 		let app=app.route("/create",axum::routing::options(move||allow_cors(allow_origin0.clone())));
-		let app=app.route("/create",axum::routing::post(move|multipart|full_upload::post(arg_tup0.clone(),file_service,multipart))).layer(axum::extract::DefaultBodyLimit::max(full_upload_limit));
+		let app=app.route("/create",axum::routing::post(move|multipart|full_upload::post(arg_tup0.clone(),file_service,multipart)))
+			.layer(axum::extract::DefaultBodyLimit::max(arg_tup.config.full_upload_limit as usize));
 		let arg_tup0=arg_tup.clone();
 		let allow_origin0=arg_tup.config.clone();
 		let app=app.route("/abort",axum::routing::options(move||allow_cors(allow_origin0.clone())));

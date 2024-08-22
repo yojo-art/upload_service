@@ -23,15 +23,14 @@ pub struct RequestParams{
 pub struct ResponseBody{
 	allow_upload:bool,
 	min_split_size:u32,
-	max_split_size:u32,
+	max_split_size:u64,
 	session_id:String,
 }
 pub async fn post(
 	mut ctx:Context,
 	request: axum::extract::Request,
 )->axum::response::Response{
-	let max_size=20*1024*1024;//最大20MB
-	let min_size=3*1024*1024;//最小3MB
+	let min_size=5*1024*1024;//最小5MB
 	let stream=request.into_body().into_data_stream();
 	let body_with_io_error = stream.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err));
 	let mut body_reader = StreamReader::new(body_with_io_error);
@@ -72,7 +71,7 @@ pub async fn post(
 	let mut res=ResponseBody{
 		allow_upload:true,
 		min_split_size:min_size,
-		max_split_size:max_size,
+		max_split_size:ctx.config.part_max_size,
 		session_id:uuid::Uuid::new_v4().to_string(),
 	};
 	let s3_key=format!("{}/{}",ctx.config.prefix,uuid::Uuid::new_v4().to_string());

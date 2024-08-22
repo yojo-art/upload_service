@@ -29,13 +29,32 @@ pub async fn post(
 	let body_reader = StreamReader::new(body_with_io_error);
 	futures::pin_mut!(body_reader);
 	//println!("{:?}",session);
-	let mut buf=vec![];
-	if let Err(e)=body_reader.read_to_end(&mut buf).await{
-		eprintln!("{}:{} {:?}",file!(),line!(),e);
-		let mut header=axum::http::header::HeaderMap::new();
-		ctx.config.set_cors_header(&mut header);
-		return (StatusCode::INTERNAL_SERVER_ERROR,header).into_response();
-	}
+	let buf={
+		let mut all_body=vec![];
+		let mut buf=vec![];
+		loop{
+			match body_reader.read(&mut buf).await{
+				Ok(len)=>{
+					if len==0{
+						break;
+					}
+					if all_body.len()+len>ctx.config.part_max_size as usize{
+						let mut header=axum::http::header::HeaderMap::new();
+						ctx.config.set_cors_header(&mut header);
+						return (StatusCode::PAYLOAD_TOO_LARGE,header).into_response();
+					}
+					all_body.extend_from_slice(&buf[0..len]);
+				},
+				Err(e)=>{
+					eprintln!("{}:{} {:?}",file!(),line!(),e);
+					let mut header=axum::http::header::HeaderMap::new();
+					ctx.config.set_cors_header(&mut header);
+					return (StatusCode::INTERNAL_SERVER_ERROR,header).into_response();
+				}
+			}
+		}
+		all_body
+	};
 	let (mut session,hashed_sid)=match ctx.upload_session(authorization.as_ref(),true).await{
 		Ok(v)=>v,
 		Err(e)=>return e,
