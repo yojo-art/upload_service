@@ -1,0 +1,6 @@
+/target
+/minio
+/dev_env
+/valkey
+/config.json
+/Cargo.lock
